@@ -1,0 +1,37 @@
+name: BLE Engineering Excellence CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install Build Tools & Static Analyzer
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc cppcheck
+
+    - name: Static Code Analysis (Cppcheck)
+      run: |
+        cppcheck --enable=warning,style,performance,portability \
+                 --suppress=missingIncludeSystem \
+                 --suppress=unusedFunction \
+                 --error-exitcode=1 \
+                 --inline-suppr \
+                 -I include src/ tests/
+
+    - name: Build Unit Tests
+      run: |
+        gcc -Wall -Wextra -Werror -Iinclude src/ble_ll_model.c tests/test_state_machine.c -o test_runner
+
+    - name: Execute Automated Test Suite
+      run: |
+        ./test_runner
